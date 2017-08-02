@@ -5,12 +5,10 @@ class Scrobble(val artist: String, val album: String, val title: String){
   override def toString: String = s"[$artist], [$album], [$title]"
 }
 
+class AlbumIndex(val name: String, val scrobbles: List[Scrobble] = Nil)
 
-
-class ArtistIndex(val name: String, val scrobbles: List[Scrobble] = Nil){
-  def append(s : Scrobble): ArtistIndex ={
-    new ArtistIndex(name, s :: scrobbles)
-  }
+class ArtistIndex(val name: String, val albums: List[AlbumIndex] = Nil){
+  def scrobblesSize  = albums.aggregate(a, b => a.)
 }
 
 
@@ -21,17 +19,27 @@ object LearnScala {
 
     val artistIndices = readFile(filePath)
       .map(makeAnObject)
-      .toList.groupBy(s => s.artist)
-      .map(pair => new ArtistIndex(pair._1, pair._2))
+      .toList
+      .groupBy(s => s.artist)
+      .map(pair => new ArtistIndex(pair._1, buildAlbumIndices(pair)))
       .toList
 
     artistIndices
-      .sortBy(a => -(a.scrobbles.length))
-      .foreach(a => println(s"NAME = ${a.name} LENGTH = ${a.scrobbles.length}"))
+      .sortBy(a => -(a.scrobblesSize))
+      .foreach(a => printSummary(a))
 
+  }
 
-      //.map(x => s"just read: [$x]")
-      // .foreach(println)
+  def printSummary(a: ArtistIndex) = {
+    println(s"NAME = ${a.name} LENGTH = ${a.albums.length}")
+
+    for(album <- a.albums.sortBy(alb => -(alb.scrobbles.length))){
+      println(s"\t\t[${album.name}]\t\t[${album.scrobbles.length}]")
+    }
+  }
+
+  private def buildAlbumIndices(pair: (String, List[Scrobble])) = {
+    pair._2.groupBy(s => s.album).map(pair => new AlbumIndex(pair._1, pair._2)).toList
   }
 
   def readFile(filePath: String) : Iterator[String] = {
